@@ -13,7 +13,7 @@ var Link = require('../app/models/link');
 // Remove the 'x' from beforeEach block when working on
 // authentication tests.
 /************************************************************/
-var beforeEach = function(){};
+var xbeforeEach = function(){};
 /************************************************************/
 
 
@@ -59,7 +59,7 @@ describe('', function() {
       });
   });
 
-  describe('Link creation:', function(){
+  xdescribe('Link creation:', function(){
 
     var requestWithSession = request.defaults({jar: true});
 
@@ -68,6 +68,7 @@ describe('', function() {
           'username': 'Phillip',
           'password': 'Phillip'
       }).save().then(function(){
+        // console.log('again in here');
         var options = {
           'method': 'POST',
           'followAllRedirects': true,
@@ -79,6 +80,7 @@ describe('', function() {
         };
         // login via form and save session info
         requestWithSession(options, function(error, res, body) {
+
           done();
         });
       });
@@ -95,6 +97,10 @@ describe('', function() {
 
       requestWithSession(options, function(error, res, body) {
         // res comes from the request module, and may not follow express conventions
+
+        // console.log(options);
+        // console.log('error: ', error);
+        // console.log('response status code from spec ', res );
         expect(res.statusCode).to.equal(404);
         done();
       });
@@ -177,6 +183,7 @@ describe('', function() {
 
         requestWithSession(options, function(error, res, body) {
           var code = res.body.code;
+          // console.log('code from spec is', code);
           expect(code).to.equal(link.get('code'));
           done();
         });
@@ -212,10 +219,11 @@ describe('', function() {
 
   }); // 'Link creation'
 
-  describe('Priviledged Access:', function(){
+  xdescribe('Priviledged Access:', function(){
 
     it('Redirects to login page if a user tries to access the main page and is not signed in', function(done) {
       request('http://127.0.0.1:4568/', function(error, res, body) {
+        // console.log('res is:', res);
         expect(res.req.path).to.equal('/login');
         done();
       });
@@ -237,7 +245,7 @@ describe('', function() {
 
   }); // 'Priviledged Access'
 
-  xdescribe('Account Creation:', function(){
+  describe('Account Creation:', function(){
 
     it('Signup creates a user record', function(done) {
       var options = {

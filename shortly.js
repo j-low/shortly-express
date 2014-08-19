@@ -11,7 +11,15 @@ var Links = require('./app/collections/links');
 var Link = require('./app/models/link');
 var Click = require('./app/models/click');
 
+var session = require('express-session');
 var app = express();
+
+// adding session middleware
+app.use(session({secret: 'kawdfadsfawfewaf',
+                saveUninitialized: true,
+                resave: true}));
+// app.use(express.cookieParser('secret'));
+// app.use(express.session());
 
 app.set('views', __dirname + '/views');
 app.set('view engine', 'ejs');
@@ -22,30 +30,72 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
 
+// restrict function - to check if request is from a valid session
+var restrict = function(req, res, next) {
+  // console.log('req.session: ', req.session);
+  if(req.session) {
+  // next();
+    if(req.session.userId) {
+       // console.log('session.userID');
+      next();
+    } else {
+    console.log('inside restrict function');
+    res.redirect('/login');
+    res.send(200);
+    }
+    // console.log('no userId');
+  } else {
+    res.redirect('/login');
+    // req.session.error = 'Access denied!';
+  }
+}
 
-app.get('/', 
+app.get('/', restrict,
 function(req, res) {
   res.render('index');
 });
 
-app.get('/create', 
+app.get('/create', restrict,
 function(req, res) {
   res.render('index');
 });
 
-app.get('/links', 
+app.get('/links', restrict,
 function(req, res) {
   Links.reset().fetch().then(function(links) {
     res.send(200, links.models);
   });
 });
 
-app.post('/links', 
+app.get('/login',
+  function(req, res) {
+    res.render('login');
+    // res.send(200);
+  })
+
+app.get('/signup',
+  function(req, res) {
+    res.render('signup');
+    // res.send(200);
+  })
+
+app.post('/signup',
+  function(req, res) {
+    new User({username: req.body.username, password: req.body.password}).save().then(function(model) {
+
+      res.location('/');
+      res.redirect('/');
+      res.send(200);
+
+    });
+  })
+
+// check for a valid session id, if not a valid session id, then redirect to login
+app.post('/links', restrict,
 function(req, res) {
   var uri = req.body.url;
 
   if (!util.isValidUrl(uri)) {
-    console.log('Not a valid url: ', uri);
     return res.send(404);
   }
 
@@ -55,7 +105,6 @@ function(req, res) {
     } else {
       util.getUrlTitle(uri, function(err, title) {
         if (err) {
-          console.log('Error reading URL heading: ', err);
           return res.send(404);
         }
 
@@ -78,6 +127,29 @@ function(req, res) {
 // Write your authentication routes here
 /************************************************************/
 
+app.post('/login', function(req, res) {
+  // check the username and password against that stored in database
+  // if authenticated, set session id and place that id in user's cookie
+  new User({username: req.body.username}).fetch().then(function(model) {
+    console.log(model.attributes.username);
+      req.session.regenerate(function(err) {
+        // console.log('RES: ', res);
+        // console.log('req.session ', req.session);
+        req.session.userId = model.attributes.username;
+        console.log('req.session.userId ', req.session.userId);
+        // res.render('links');
+      });
+
+  })
+
+});
+
+app.get('/logout', function(req, res) {
+  if(req.session) {
+    req.session.destroy();
+  }
+  res.redirect('/');
+});
 
 
 /************************************************************/
